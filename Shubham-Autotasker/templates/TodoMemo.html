@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memo and To-Do List Manager</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .clock { font-size: 24px; margin-bottom: 20px; }
+  .container { display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%; max-width: 800px; }
+  .column { flex: 1; margin: 0 10px; }
+  h2 { text-align: center; }
+  .memo-list, .todo-list, .calendar { border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+  .item { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
+  .item input { margin-right: 10px; }
+  .add-item { display: flex; justify-content: space-between; margin-top: 10px; }
+  .add-item input { flex: 1; margin-right: 10px; padding: 5px; }
+  .calendar-table { width: 100%; border-collapse: collapse; }
+  .calendar-table th, .calendar-table td { border: 1px solid #ccc; padding: 5px; text-align: center; cursor: pointer; }
+  .calendar-table th { background: #f4f4f4; }
+  .selected-date { font-weight: bold; color: #007BFF; }
+  .highlight-date { font-weight: bold; color: red; }
+  .nav-buttons, .date-selector { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .month-year { text-align: center; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="clock" id="clock"></div>
+<div class="container">
+  <div class="column">
+    <h2>Memo</h2>
+    <div class="memo-list" id="memo-list"></div>
+    <div class="add-item">
+      <input type="text" id="new-memo" placeholder="Add new memo">
+      <button id="add-memo-btn">Add</button>
+    </div>
+  </div>
+  <div class="column">
+    <h2>To-Do List</h2>
+    <div class="todo-list" id="todo-list"></div>
+    <div class="add-item">
+      <input type="text" id="new-todo" placeholder="Add new task">
+      <button id="add-todo-btn">Add</button>
+    </div>
+  </div>
+  <div class="column">
+    <h2>Calendar</h2>
+    <div class="nav-buttons">
+      <button id="prev-month-btn">Previous</button>
+      <span class="month-year" id="month-year"></span>
+      <button id="next-month-btn">Next</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <div class="date-selector">
+      <button id="prev-day-btn">Previous Day</button>
+      <input type="date" id="date-input">
+      <button id="next-day-btn">Next Day</button>
+    </div>
+  </div>
+</div>
+<script>
+  let selectedDate = new Date();
+  let memos = JSON.parse(localStorage.getItem('memos')) || {};
+  let todos = JSON.parse(localStorage.getItem('todos')) || {};
+
+  function updateClock() {
+    const clock = document.getElementById('clock');
+    const now = new Date();
+    clock.textContent = now.toLocaleTimeString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  function saveData() {
+    localStorage.setItem('memos', JSON.stringify(memos));
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }
+
+  function addMemo() {
+    const memoInput = document.getElementById('new-memo');
+    if (memoInput.value) {
+      const dateKey = selectedDate.toISOString().split('T')[0];
+      if (!memos[dateKey]) {
+        memos[dateKey] = [];
+      }
+      memos[dateKey].push(memoInput.value);
+      memoInput.value = '';
+      updateMemoList();
+      saveData();
+      createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+    }
+  }
+
+  function addTodo() {
+    const todoInput = document.getElementById('new-todo');
+    if (todoInput.value) {
+      const dateKey = selectedDate.toISOString().split('T')[0];
+      if (!todos[dateKey]) {
+        todos[dateKey] = [];
+      }
+      todos[dateKey].push(todoInput.value);
+      todoInput.value = '';
+      updateTodoList();
+      saveData();
+      createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+    }
+  }
+
+  function updateMemoList() {
+    const memoList = document.getElementById('memo-list');
+    memoList.innerHTML = '';
+    const dateKey = selectedDate.toISOString().split('T')[0];
+    if (memos[dateKey]) {
+      memos[dateKey].forEach((memo, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        const text = document.createElement('span');
+        text.textContent = memo;
+        item.appendChild(text);
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update';
+        updateButton.onclick = () => {
+          const newMemo = prompt('Update memo:', memo);
+          if (newMemo) {
+            memos[dateKey][index] = newMemo;
+            updateMemoList();
+            saveData();
+            createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+          }
+        };
+        item.appendChild(updateButton);
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.onclick = () => {
+          memos[dateKey] = memos[dateKey].filter(m => m !== memo);
+          updateMemoList();
+          saveData();
+          createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+        };
+        item.appendChild(removeButton);
+        memoList.appendChild(item);
+      });
+    }
+  }
+
+  function updateTodoList() {
+    const todoList = document.getElementById('todo-list');
+    todoList.innerHTML = '';
+    const dateKey = selectedDate.toISOString().split('T')[0];
+    if (todos[dateKey]) {
+      todos[dateKey].forEach((todo, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.onchange = () => item.classList.toggle('completed');
+        item.appendChild(checkbox);
+        const text = document.createElement('span');
+        text.textContent = todo;
+        item.appendChild(text);
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update';
+        updateButton.onclick = () => {
+          const newTodo = prompt('Update task:', todo);
+          if (newTodo) {
+            todos[dateKey][index] = newTodo;
+            updateTodoList();
+            saveData();
+            createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+          }
+        };
+        item.appendChild(updateButton);
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.onclick = () => {
+          todos[dateKey] = todos[dateKey].filter(t => t !== todo);
+          updateTodoList();
+          saveData();
+          createCalendar(selectedDate.getFullYear(), selectedDate.getMonth());
+        };
+        item.appendChild(removeButton);
+        todoList.appendChild(item);
+      });
+    }
+  }
+
+  function createCalendar(year, month) {
+    const calendar = document.getElementById('calendar');
+    const monthYear = document.getElementById('month-year');
+    monthYear.textContent = `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`;
+    calendar.innerHTML = '';
+    const date = new Date(Date.UTC(year, month, 1));
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const table = document.createElement('table');
+    table.className = 'calendar-table';
+    let headerRow = document.createElement('tr');
+    days.forEach(day => {
+      const th = document.createElement('th');
+      th.textContent = day;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+    let row = document.createElement('tr');
+    for (let i = 0; i < date.getUTCDay(); i++) {
+      let cell = document.createElement('td');
+      row.appendChild(cell);
+    }
+    while (date.getUTCMonth() === month) {
+      if (date.getUTCDay() === 0) {
+        row = document.createElement('tr');
+        table.appendChild(row);
+      }
+      let cell = document.createElement('td');
+      cell.textContent = date.getUTCDate();
+      cell.onclick = (event) => {
+        event.stopPropagation(); // Prevent the month from switching
+        selectDate(new Date(date));
+      };
+      const dateKey = date.toISOString().split('T')[0];
+      if (date.toDateString() === selectedDate.toDateString()) {
+        cell.classList.add('selected-date');
+      }
+      if (memos[dateKey] && memos[dateKey].length > 0 || todos[dateKey] && todos[dateKey].length > 0) {
+        cell.classList.add('highlight-date');
+      }
+      row.appendChild(cell);
+      if (date.getUTCDay() === 6) {
+        table.appendChild(row);
+        row = document.createElement('tr');
+      }
+      date.setUTCDate(date.getUTCDate() + 1);
+    }
+    table.appendChild(row);  // Append the last row
+    calendar.appendChild(table);
+  }
+
+  function selectDate(date) {
+    selectedDate = new Date(date);
+    updateMemoList();
+    updateTodoList();
+    document.getElementById('date-input').value = selectedDate.toISOString().split('T')[0];
+    createCalendar(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth());
+  }
+
+  function selectSpecificDate() {
+    const dateInput = document.getElementById('date-input').value;
+    if (dateInput) {
+      selectDate(new Date(dateInput));
+    }
+  }
+
+  function prevDay() {
+    selectedDate.setUTCDate(selectedDate.getUTCDate() - 1);
+    selectDate(selectedDate);
+  }
+
+  function nextDay() {
+    selectedDate.setUTCDate(selectedDate.getUTCDate() + 1);
+    selectDate(selectedDate);
+  }
+
+  function prevMonth() {
+    selectedDate.setUTCMonth(selectedDate.getUTCMonth() - 1);
+    createCalendar(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth());
+  }
+
+  function nextMonth() {
+    selectedDate.setUTCMonth(selectedDate.getUTCMonth() + 1);
+    createCalendar(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth());
+  }
+
+  document.getElementById('add-memo-btn').addEventListener('click', addMemo);
+  document.getElementById('add-todo-btn').addEventListener('click', addTodo);
+  document.getElementById('prev-month-btn').addEventListener('click', prevMonth);
+  document.getElementById('next-month-btn').addEventListener('click', nextMonth);
+  document.getElementById('prev-day-btn').addEventListener('click', prevDay);
+  document.getElementById('next-day-btn').addEventListener('click', nextDay);
+  document.getElementById('date-input').addEventListener('change', selectSpecificDate);
+
+  const today = new Date();
+  selectDate(today);
+</script>
+</body>
+</html>

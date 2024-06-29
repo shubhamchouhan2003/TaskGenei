@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Game</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; }
+  .grid { display: flex; flex-wrap: wrap; width: 320px; margin: 0 auto; }
+  .card { width: 80px; height: 80px; margin: 5px; background: #ccc; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; }
+  .hidden { background: #333; color: #333; }
+</style>
+</head>
+<body>
+<h1>Memory Game</h1>
+<div class="grid"></div>
+<script>
+  const cardsArray = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'];
+  let firstCard, secondCard;
+  let lockBoard = false;
+
+  function shuffle(array) {
+    array.sort(() => Math.random() - 0.5);
+  }
+
+  function createBoard() {
+    const grid = document.querySelector('.grid');
+    shuffle(cardsArray);
+    cardsArray.forEach(char => {
+      const card = document.createElement('div');
+      card.classList.add('card', 'hidden');
+      card.textContent = char;
+      card.addEventListener('click', flipCard);
+      grid.appendChild(card);
+    });
+  }
+
+  function flipCard() {
+    if (lockBoard || this === firstCard) return;
+    this.classList.remove('hidden');
+
+    if (!firstCard) {
+      firstCard = this;
+    } else {
+      secondCard = this;
+      checkForMatch();
+    }
+  }
+
+  function checkForMatch() {
+    lockBoard = true;
+    if (firstCard.textContent === secondCard.textContent) {
+      resetBoard();
+    } else {
+      setTimeout(() => {
+        firstCard.classList.add('hidden');
+        secondCard.classList.add('hidden');
+        resetBoard();
+      }, 1000);
+    }
+  }
+
+  function resetBoard() {
+    [firstCard, secondCard, lockBoard] = [null, null, false];
+  }
+
+  createBoard();
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes Taking Application</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to right, rgb(242, 112, 156), rgb(255, 148, 114));
+        }
+
+        #main {
+            min-height: 100vh;
+            padding-bottom: 50px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #addBtn {
+            position: fixed;
+            right: 10px;
+            top: 10px;
+            background-color: #179712;
+            border: none;
+            padding: 10px;
+            color: white;
+            outline: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #addBtn:hover {
+            background-color: #06a006;
+        }
+
+        .note {
+            background: transparent;
+            margin: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .tool {
+            background-color: #222831;
+            color: white;
+            padding: 5px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .tool i {
+            padding: 5px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .tool i:hover {
+            color: #aca1a1;
+        }
+
+        .note textarea {
+            width: 300px;
+            border: none;
+            min-height: 220px;
+            resize: none;
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            overflow: hidden;
+            background-color: #393e46;
+            border-radius: 0px 0px 10px 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .note textarea:hover {
+            background-color: #293e46;
+        }
+
+        .note textarea:focus {
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <button id="addBtn">
+        <i class="fas fa-plus"></i>
+        Add Note
+    </button>
+
+    <div id="main">
+        <!-- Notes will be dynamically added here -->
+    </div>
+
+    <script>
+        const addBtn = document.querySelector('#addBtn');
+        const main = document.querySelector('#main');
+
+        addBtn.addEventListener("click", addNote);
+
+        function addNote() {
+            const note = document.createElement("div");
+            note.classList.add("note");
+            note.innerHTML = `
+                <div class="tool">
+                    <i class="save fas fa-save"></i>
+                    <i class="trash fas fa-trash"></i>
+                </div>
+                <textarea></textarea>
+            `;
+
+            const trashIcon = note.querySelector(".trash");
+            const saveIcon = note.querySelector(".save");
+            const textarea = note.querySelector("textarea");
+
+            trashIcon.addEventListener("click", () => {
+                note.remove();
+                saveNote();
+            });
+
+            saveIcon.addEventListener("click", saveNote);
+            textarea.addEventListener("input", saveNote);
+
+            main.appendChild(note);
+        }
+
+        function saveNote() {
+            const notes = document.querySelectorAll(".note textarea");
+            const data = [];
+
+            notes.forEach(note => {
+                data.push(note.value);
+            });
+
+            if (data.length === 0) {
+                localStorage.removeItem("notes");
+            } else {
+                localStorage.setItem("notes", JSON.stringify(data));
+            }
+        }
+
+        function loadNotes() {
+            const lsNotes = JSON.parse(localStorage.getItem("notes"));
+
+            if (lsNotes !== null) {
+                lsNotes.forEach(noteText => {
+                    addNote();
+                    const notes = document.querySelectorAll(".note textarea");
+                    const lastNote = notes[notes.length - 1];
+                    lastNote.value = noteText;
+                });
+            } else {
+                addNote();
+            }
+        }
+
+        loadNotes();
+    </script>
+    <script src="https://kit.fontawesome.com/0bc3a25231.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

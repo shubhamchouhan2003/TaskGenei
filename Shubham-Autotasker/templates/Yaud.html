@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .custom-container {
+            background: #11151f;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3);
+            width: 400px;
+        }
+        .custom-title {
+            font-size: 28px;
+            color: #ff4654;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        .custom-textarea {
+            width: 100%;
+            border: 2px solid #dd2423;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #dd2423;
+            background-color: #0f111a;
+        }
+        .custom-dropdown {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to bottom, #dd2423, #d94432);
+            color: white;
+            margin-bottom: 10px;
+        }
+        .download-button {
+            background: linear-gradient(to bottom, #dd2423, #d94432);
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease-in-out;
+            border: 2px solid #a51312;
+            width: 48%;
+        }
+        .download-button:hover {
+            background: linear-gradient(to bottom, #cf3635, #c42221);
+        }
+        .output-area {
+            border: 1px solid #465669;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            background-color: #0f111a;
+            max-height: 300px;
+            overflow: auto;
+            animation: fadeInAnimation ease 3s;
+        }
+        @keyframes fadeInAnimation {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-container">
+        <h2 class="custom-title">YouTube Downloader</h2>
+        <textarea id="linksInput" class="custom-textarea" placeholder="Enter YouTube video links (one per line)"></textarea>
+        <select id="downloadOption" class="custom-dropdown">
+            <option value="Video">Video</option>
+            <option value="Audio">Audio</option>
+        </select>
+        <div style="display: flex; justify-content: space-between;">
+            <button class="download-button" onclick="addLinks()">Download Links</button>
+            <button class="download-button" onclick="clearOutput()">Clear Output</button>
+        </div>
+        <div id="outputText" class="output-area"></div>
+    </div>
+
+    <script>
+        function addLinks() {
+            const linksText = document.getElementById('linksInput').value.trim();
+            if (linksText) {
+                const links = linksText.split('\\n');
+                const downloadOption = document.getElementById('downloadOption').value;
+                processLinks(links, downloadOption);
+            }
+        }
+
+        function processLinks(links, downloadOption) {
+            links.forEach(link => {
+                if (downloadOption === 'Video') {
+                    downloadVideo(link);
+                } else if (downloadOption === 'Audio') {
+                    downloadAudio(link);
+                }
+            });
+        }
+
+        function downloadVideo(link) {
+            fetch('/download_video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ link: link })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const outputText = document.getElementById('outputText');
+                outputText.innerHTML += `<span style='color: #27ae60;'>Video '${data.title}' downloaded successfully!</span><br>`;
+            })
+            .catch(error => {
+                const outputText = document.getElementById('outputText');
+                outputText.innerHTML += `<span style='color: #c0392b;'>An error occurred: ${error.message}</span><br>`;
+            });
+        }
+
+        function downloadAudio(link) {
+            fetch('/download_audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ link: link })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const outputText = document.getElementById('outputText');
+                outputText.innerHTML += `<span style='color: #27ae60;'>Audio '${data.title}' downloaded successfully!</span><br>`;
+            })
+            .catch(error => {
+                const outputText = document.getElementById('outputText');
+                outputText.innerHTML += `<span style='color: #c0392b;'>An error occurred: ${error.message}</span><br>`;
+            });
+        }
+
+        function clearOutput() {
+            document.getElementById('outputText').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
